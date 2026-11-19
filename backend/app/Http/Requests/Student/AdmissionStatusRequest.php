@@ -21,3 +21,4 @@ class AdmissionStatusRequest extends FormRequest
         ];
     }
 }
+

@@ -45,3 +45,4 @@ class ImportJob extends Model
         return $this->belongsTo(Tenant::class, 'tenant_id');
     }
 }
+

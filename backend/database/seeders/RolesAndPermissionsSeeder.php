@@ -22,6 +22,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'fees' => ['view', 'create', 'edit', 'delete', 'collect', 'refund', 'approve', 'export', 'print'],
             'examinations' => ['view', 'create', 'edit', 'delete', 'publish', 'export', 'print'],
             'staff' => ['view', 'create', 'edit', 'delete', 'manage', 'export'],
+            'payroll' => ['view', 'create', 'edit', 'delete', 'manage', 'export'],
             'library' => ['view', 'create', 'edit', 'delete', 'manage', 'export'],
             'transport' => ['view', 'create', 'edit', 'delete', 'manage', 'export'],
             'inventory' => ['view', 'create', 'edit', 'delete', 'manage', 'export'],
@@ -104,6 +105,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'description' => 'Manages fee structures, ledger collections, invoices, and refunds.',
                 'permissions' => [
                     'fees.view', 'fees.create', 'fees.edit', 'fees.collect', 'fees.refund', 'fees.export', 'fees.print',
+                    'payroll.view', 'payroll.create', 'payroll.edit', 'payroll.manage', 'payroll.export',
                     'students.view',
                     'reports.view', 'reports.export', 'reports.print',
                 ],
@@ -158,6 +160,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'description' => 'Staff records, contracts, leaves, designations, and attendance.',
                 'permissions' => [
                     'staff.view', 'staff.create', 'staff.edit', 'staff.delete', 'staff.manage', 'staff.export',
+                    'payroll.view', 'payroll.create', 'payroll.edit', 'payroll.manage', 'payroll.export',
                     'reports.view', 'reports.export',
                 ],
             ],

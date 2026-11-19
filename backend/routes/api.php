@@ -11,6 +11,11 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\RolePermissionController;
 use App\Http\Controllers\Api\Auth\SessionController;
 use App\Http\Controllers\Api\Auth\TwoFactorController;
+use App\Http\Controllers\Api\Staff\DepartmentController;
+use App\Http\Controllers\Api\Staff\EmployeeController;
+use App\Http\Controllers\Api\Staff\LeaveController;
+use App\Http\Controllers\Api\Staff\PayrollController;
+use App\Http\Controllers\Api\Staff\TeacherController;
 use App\Http\Controllers\Api\Student\AdmissionController;
 use App\Http\Controllers\Api\Student\GuardianController;
 use App\Http\Controllers\Api\Student\StudentController;
@@ -234,4 +239,73 @@ Route::middleware(['auth:sanctum', 'tenant.require', 'tenant.membership', 'branc
 
     Route::post('/timetable-entries/{entry}/substitute', [TimetableController::class, 'assignSubstitute'])
         ->middleware('permission:academics.manage');
+
+    // ==========================================
+    // Employee & Staff Management Routes
+    // ==========================================
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index'])->middleware('permission:staff.view');
+        Route::post('/', [EmployeeController::class, 'store'])->middleware('permission:staff.create');
+        Route::get('/{employee}', [EmployeeController::class, 'show'])->middleware('permission:staff.view');
+        Route::put('/{employee}', [EmployeeController::class, 'update'])->middleware('permission:staff.edit');
+        Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->middleware('permission:staff.delete');
+        Route::post('/{employee}/contracts', [EmployeeController::class, 'addContract'])->middleware('permission:staff.edit');
+        Route::post('/{employee}/documents', [EmployeeController::class, 'addDocument'])->middleware('permission:staff.edit');
+        Route::post('/{employee}/exit', [EmployeeController::class, 'recordExit'])->middleware('permission:staff.manage');
+    });
+
+    // ==========================================
+    // Teacher Management Routes
+    // ==========================================
+    Route::prefix('teachers')->group(function () {
+        Route::get('/', [TeacherController::class, 'index'])->middleware('permission:staff.view');
+        Route::post('/substitutions', [TeacherController::class, 'assignSubstitute'])->middleware('permission:staff.manage');
+        Route::get('/{teacher}', [TeacherController::class, 'show'])->middleware('permission:staff.view');
+        Route::get('/{teacher}/workload', [TeacherController::class, 'workload'])->middleware('permission:staff.view');
+        Route::get('/{teacher}/timetable', [TeacherController::class, 'timetable'])->middleware('permission:staff.view');
+        Route::get('/{teacher}/attendance', [TeacherController::class, 'attendance'])->middleware('permission:staff.view');
+    });
+
+    // ==========================================
+    // Departments & Designations Routes
+    // ==========================================
+    Route::prefix('departments')->group(function () {
+        Route::get('/', [DepartmentController::class, 'index'])->middleware('permission:staff.view');
+        Route::post('/', [DepartmentController::class, 'store'])->middleware('permission:staff.manage');
+    });
+
+    Route::prefix('designations')->group(function () {
+        Route::get('/', [DepartmentController::class, 'designations'])->middleware('permission:staff.view');
+        Route::post('/', [DepartmentController::class, 'storeDesignation'])->middleware('permission:staff.manage');
+    });
+
+    // ==========================================
+    // Leave Management Routes
+    // ==========================================
+    Route::prefix('leaves')->group(function () {
+        Route::get('/types', [LeaveController::class, 'types'])->middleware('permission:staff.view');
+        Route::post('/types', [LeaveController::class, 'storeType'])->middleware('permission:staff.manage');
+        Route::get('/balances/{employee}', [LeaveController::class, 'balances'])->middleware('permission:staff.view');
+        Route::get('/applications', [LeaveController::class, 'applications'])->middleware('permission:staff.view');
+        Route::post('/applications', [LeaveController::class, 'apply'])->middleware('permission:staff.view');
+        Route::put('/applications/{application}/review', [LeaveController::class, 'review'])->middleware('permission:staff.manage');
+    });
+
+    // ==========================================
+    // Payroll & Compensation Routes
+    // ==========================================
+    Route::prefix('payroll')->group(function () {
+        Route::get('/components', [PayrollController::class, 'components'])->middleware('permission:payroll.view');
+        Route::post('/components', [PayrollController::class, 'storeComponent'])->middleware('permission:payroll.manage');
+        Route::get('/structures', [PayrollController::class, 'structures'])->middleware('permission:payroll.view');
+        Route::post('/structures', [PayrollController::class, 'storeStructure'])->middleware('permission:payroll.manage');
+        Route::post('/employees/{employee}/profile', [PayrollController::class, 'assignProfile'])->middleware('permission:payroll.manage');
+        Route::get('/periods', [PayrollController::class, 'periods'])->middleware('permission:payroll.view');
+        Route::post('/periods', [PayrollController::class, 'storePeriod'])->middleware('permission:payroll.manage');
+        Route::post('/periods/{period}/calculate', [PayrollController::class, 'calculate'])->middleware('permission:payroll.manage');
+        Route::post('/periods/{period}/approve', [PayrollController::class, 'approve'])->middleware('permission:payroll.manage');
+        Route::post('/periods/{period}/pay', [PayrollController::class, 'pay'])->middleware('permission:payroll.manage');
+        Route::get('/payslips', [PayrollController::class, 'payslips'])->middleware('permission:payroll.view');
+        Route::get('/payslips/{payslip}', [PayrollController::class, 'showPayslip'])->middleware('permission:payroll.view');
+    });
 });

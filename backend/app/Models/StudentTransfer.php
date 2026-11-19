@@ -50,3 +50,4 @@ class StudentTransfer extends Model
         return $this->belongsTo(SchoolBranch::class, 'branch_id');
     }
 }
+

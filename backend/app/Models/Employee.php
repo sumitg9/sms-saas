@@ -42,6 +42,8 @@ class Employee extends Model
         'status',
     ];
 
+    protected $appends = ['full_name'];
+
     protected function casts(): array
     {
         return [
@@ -54,7 +56,7 @@ class Employee extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim("{$this->first_name} {$this->middle_name} {$this->last_name}");
+        return preg_replace('/\s+/', ' ', trim("{$this->first_name} {$this->middle_name} {$this->last_name}"));
     }
 
     public function tenant(): BelongsTo
@@ -115,6 +117,41 @@ class Employee extends Model
     public function classTeachers(): HasMany
     {
         return $this->hasMany(ClassTeacher::class, 'employee_id');
+    }
+
+    public function leaveApplications(): HasMany
+    {
+        return $this->hasMany(LeaveApplication::class, 'applicant_id');
+    }
+
+    public function timetableEntries(): HasMany
+    {
+        return $this->hasMany(TimetableEntry::class, 'employee_id');
+    }
+
+    public function substitutions(): HasMany
+    {
+        return $this->hasMany(TimetableSubstitution::class, 'original_employee_id');
+    }
+
+    public function substituteFor(): HasMany
+    {
+        return $this->hasMany(TimetableSubstitution::class, 'substitute_employee_id');
+    }
+
+    public function salaryProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeSalaryProfile::class, 'employee_id');
+    }
+
+    public function payslips(): HasMany
+    {
+        return $this->hasMany(Payslip::class, 'employee_id');
+    }
+
+    public function exitRecord(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeExit::class, 'employee_id');
     }
 }
 

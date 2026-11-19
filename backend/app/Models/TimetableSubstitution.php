@@ -37,6 +37,11 @@ class TimetableSubstitution extends Model
         return $this->belongsTo(TimetableEntry::class, 'timetable_entry_id');
     }
 
+    public function timetableEntry(): BelongsTo
+    {
+        return $this->belongsTo(TimetableEntry::class, 'timetable_entry_id');
+    }
+
     public function originalTeacher(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'original_employee_id');

@@ -23,3 +23,4 @@ class StudentPromotionRequest extends FormRequest
         ];
     }
 }
+

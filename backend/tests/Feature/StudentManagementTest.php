@@ -27,8 +27,6 @@ use Tests\TestCase;
 
 class StudentManagementTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected Tenant $tenant;
     protected School $school;
     protected SchoolBranch $branch;
@@ -112,7 +110,8 @@ class StudentManagementTest extends TestCase
             'id' => (string) Str::uuid(),
             'first_name' => 'School',
             'last_name' => 'Administrator',
-            'email' => 'admin@apex.edu',
+            'email' => 'admin-' . Str::random(8) . '@apex.edu',
+            'phone' => '+9198' . rand(10000000, 99999999),
             'password' => bcrypt('AdminPassword123!'),
             'is_active' => true,
         ]);
@@ -191,12 +190,14 @@ class StudentManagementTest extends TestCase
 
     public function test_confirm_admission_creates_student_profile_guardian_and_enrollment(): void
     {
+        $phone = '+9198' . rand(10000000, 99999999);
+
         // Create an application first
         $admission = StudentAdmission::create([
             'tenant_id' => $this->tenant->id,
             'branch_id' => $this->branch->id,
             'academic_session_id' => $this->session->id,
-            'application_number' => 'ADM-2026-9999',
+            'application_number' => 'ADM-' . Str::random(8),
             'applicant_first_name' => 'Siddharth',
             'applicant_last_name' => 'Mehta',
             'applied_class_id' => $this->class->id,
@@ -206,8 +207,8 @@ class StudentManagementTest extends TestCase
                 'date_of_birth' => '2012-08-20',
                 'gender' => 'male',
                 'parent_name' => 'Rajesh Mehta',
-                'parent_phone' => '+919876500002',
-                'parent_email' => 'rajesh.mehta@example.com',
+                'parent_phone' => $phone,
+                'parent_email' => 'rajesh.mehta.' . Str::random(5) . '@example.com',
                 'parent_relation' => 'father',
                 'address' => '12 MG Road, Bangalore',
             ],
@@ -235,7 +236,7 @@ class StudentManagementTest extends TestCase
         // Verify Guardian created and linked with rights
         $this->assertCount(1, $student->guardians);
         $guardian = $student->guardians->first();
-        $this->assertEquals('+919876500002', $guardian->phone);
+        $this->assertEquals($phone, $guardian->phone);
         $this->assertTrue((bool) $guardian->pivot->is_primary);
         $this->assertTrue((bool) $guardian->pivot->has_pickup_rights);
 
@@ -295,14 +296,17 @@ class StudentManagementTest extends TestCase
 
     public function test_one_parent_account_supports_multiple_children_and_blocks_unrelated_children(): void
     {
+        $parentEmail = 'ramesh-' . Str::random(6) . '@example.com';
+        $parentPhone = '+9198' . rand(10000000, 99999999);
+
         // 1. Create Parent User and Guardian record
         $parentUser = User::create([
             'id' => (string) Str::uuid(),
             'first_name' => 'Ramesh',
             'last_name' => 'Patil',
-            'email' => 'ramesh.patil@example.com',
+            'email' => $parentEmail,
             'password' => bcrypt('ParentPassword123!'),
-            'phone' => '+919876511111',
+            'phone' => $parentPhone,
             'is_active' => true,
         ]);
 
@@ -324,8 +328,8 @@ class StudentManagementTest extends TestCase
             'first_name' => 'Ramesh',
             'last_name' => 'Patil',
             'relation_type' => 'father',
-            'phone' => '+919876511111',
-            'email' => 'ramesh.patil@example.com',
+            'phone' => $parentPhone,
+            'email' => $parentEmail,
         ]);
 
         // 2. Create Child 1 (Aarav) and link to Ramesh
@@ -333,7 +337,7 @@ class StudentManagementTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'school_id' => $this->school->id,
             'branch_id' => $this->branch->id,
-            'admission_number' => 'STU-2026-0001',
+            'admission_number' => 'STU-' . Str::random(8),
             'admission_date' => '2026-04-01',
             'first_name' => 'Aarav',
             'last_name' => 'Patil',
@@ -362,7 +366,7 @@ class StudentManagementTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'school_id' => $this->school->id,
             'branch_id' => $this->branch->id,
-            'admission_number' => 'STU-2026-0002',
+            'admission_number' => 'STU-' . Str::random(8),
             'admission_date' => '2026-04-01',
             'first_name' => 'Diya',
             'last_name' => 'Patil',
@@ -391,7 +395,7 @@ class StudentManagementTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'school_id' => $this->school->id,
             'branch_id' => $this->branch->id,
-            'admission_number' => 'STU-2026-0003',
+            'admission_number' => 'STU-' . Str::random(8),
             'admission_date' => '2026-04-01',
             'first_name' => 'Kabir',
             'last_name' => 'Kapoor',
@@ -449,7 +453,7 @@ class StudentManagementTest extends TestCase
             'branch_id' => $this->branch->id,
             'board_id' => $board->id,
             'name' => 'Grade 11',
-            'code' => 'G11',
+            'code' => 'G11-' . Str::random(4),
             'order_index' => 11,
         ]);
         $secB = Section::create([
@@ -466,7 +470,7 @@ class StudentManagementTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'school_id' => $this->school->id,
             'branch_id' => $this->branch->id,
-            'admission_number' => 'STU-2026-0099',
+            'admission_number' => 'STU-' . Str::random(8),
             'admission_date' => '2026-04-01',
             'first_name' => 'Kavya',
             'last_name' => 'Iyer',
@@ -533,7 +537,7 @@ class StudentManagementTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'school_id' => $this->school->id,
             'branch_id' => $this->branch->id,
-            'admission_number' => 'STU-2026-0050',
+            'admission_number' => 'STU-' . Str::random(8),
             'admission_date' => '2026-04-01',
             'first_name' => 'Manish',
             'last_name' => 'Tiwari',
@@ -599,11 +603,16 @@ class StudentManagementTest extends TestCase
         $this->assertArrayHasKey('admission_number', $templateRes->json('data.columns'));
 
         // 2. Preview with valid row and invalid duplicate row
+        $existNum = 'STU-EXIST-' . Str::random(6);
+        $newNum = 'STU-NEW-' . Str::random(6);
+        $gPhone1 = '+9198' . rand(10000000, 99999999);
+        $gPhone2 = '+9198' . rand(10000000, 99999999);
+
         $existingStudent = Student::create([
             'tenant_id' => $this->tenant->id,
             'school_id' => $this->school->id,
             'branch_id' => $this->branch->id,
-            'admission_number' => 'STU-EXISTING-01',
+            'admission_number' => $existNum,
             'admission_date' => '2026-04-01',
             'first_name' => 'Existing',
             'last_name' => 'Student',
@@ -618,7 +627,7 @@ class StudentManagementTest extends TestCase
                 'first_name' => 'Pooja',
                 'middle_name' => '',
                 'last_name' => 'Nair',
-                'admission_number' => 'STU-NEW-001',
+                'admission_number' => $newNum,
                 'admission_date' => '2026-04-01',
                 'date_of_birth' => '2014-04-12',
                 'gender' => 'female',
@@ -627,22 +636,22 @@ class StudentManagementTest extends TestCase
                 'section_name' => 'A',
                 'roll_number' => '10A-30',
                 'guardian_name' => 'Suresh Nair',
-                'guardian_phone' => '+919876599991',
+                'guardian_phone' => $gPhone1,
                 'guardian_relation' => 'father',
                 'current_address' => 'Kochi, Kerala',
-                'emergency_contact_phone' => '+919876599991',
+                'emergency_contact_phone' => $gPhone1,
             ],
             // Invalid row: duplicate admission number
             [
                 'first_name' => 'Duplicate',
                 'last_name' => 'Test',
-                'admission_number' => 'STU-EXISTING-01', // Collides with existing!
+                'admission_number' => $existNum, // Collides with existing!
                 'date_of_birth' => '2014-05-15',
                 'gender' => 'male',
                 'class_name' => 'Grade 10',
                 'section_name' => 'A',
                 'guardian_name' => 'Test Guardian',
-                'guardian_phone' => '+919876599992',
+                'guardian_phone' => $gPhone2,
             ],
         ];
 
@@ -669,7 +678,7 @@ class StudentManagementTest extends TestCase
         $this->assertEquals(0, $importRes->json('data.error_rows'));
 
         // Verify student exists in DB
-        $imported = Student::where('admission_number', 'STU-NEW-001')->first();
+        $imported = Student::where('admission_number', $newNum)->first();
         $this->assertNotNull($imported);
         $this->assertEquals('Pooja', $imported->first_name);
         $this->assertCount(1, $imported->guardians);

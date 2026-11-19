@@ -61,3 +61,4 @@ class StudentPromotion extends Model
         return $this->belongsTo(SchoolBranch::class, 'branch_id');
     }
 }
+

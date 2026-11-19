@@ -41,5 +41,15 @@ class LeaveApplication extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'applicant_id');
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class, 'applicant_id');
+    }
 }
 
