@@ -1,0 +1,39 @@
+# System & OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Backend (Laravel)
+backend/vendor/
+backend/.env
+backend/bootstrap/cache/*.php
+backend/storage/app/public/
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/storage/logs/*.log
+backend/database/database.sqlite
+backend/database/database.sqlite-shm
+backend/database/database.sqlite-wal
+
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/dist/
+frontend/build/
+frontend/.turbo/
+
+# Local PostgreSQL Data Cluster
+pgdata/
+backend/pgdata/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
