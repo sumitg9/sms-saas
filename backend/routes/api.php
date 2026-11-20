@@ -31,6 +31,13 @@ use App\Http\Controllers\Api\Examination\ExaminationController;
 use App\Http\Controllers\Api\Examination\MarksEntryController;
 use App\Http\Controllers\Api\Examination\ResultController;
 use App\Http\Controllers\Api\Examination\ReportCardController;
+use App\Http\Controllers\Api\Lms\HomeworkController;
+use App\Http\Controllers\Api\Lms\AssignmentSubmissionController;
+use App\Http\Controllers\Api\Lms\LearningResourceController;
+use App\Http\Controllers\Api\Lms\QuizController;
+use App\Http\Controllers\Api\Portal\StudentPortalController;
+use App\Http\Controllers\Api\Portal\ParentPortalController;
+use App\Http\Controllers\Api\Portal\TeacherPortalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -424,5 +431,70 @@ Route::middleware(['auth:sanctum', 'tenant.require', 'tenant.membership', 'branc
         Route::get('/report-cards/templates', [ReportCardController::class, 'listTemplates'])->middleware('permission:examinations.view');
         Route::post('/report-cards/templates', [ReportCardController::class, 'storeTemplate'])->middleware('permission:examinations.create');
         Route::get('/{id}/students/{studentId}/report-card', [ReportCardController::class, 'generateStudentReportCard'])->middleware('permission:examinations.view');
+    });
+
+    // ==========================================
+    // LMS (Homework, Assignments, Resources & Quizzes)
+    // ==========================================
+    Route::prefix('lms')->group(function () {
+        // Homework
+        Route::get('/homework', [HomeworkController::class, 'index'])->middleware('permission:homework.view');
+        Route::post('/homework', [HomeworkController::class, 'store'])->middleware('permission:homework.create');
+        Route::get('/homework/{id}', [HomeworkController::class, 'show'])->middleware('permission:homework.view');
+        Route::put('/homework/{id}', [HomeworkController::class, 'update'])->middleware('permission:homework.edit');
+        Route::delete('/homework/{id}', [HomeworkController::class, 'destroy'])->middleware('permission:homework.delete');
+
+        // Submissions & Grading
+        Route::post('/homework/{id}/submit', [AssignmentSubmissionController::class, 'submit'])->middleware('permission:homework.submit');
+        Route::get('/homework/{id}/submissions', [AssignmentSubmissionController::class, 'index'])->middleware('permission:homework.view');
+        Route::get('/submissions/{id}', [AssignmentSubmissionController::class, 'show'])->middleware('permission:homework.view');
+        Route::post('/submissions/{id}/grade', [AssignmentSubmissionController::class, 'grade'])->middleware('permission:homework.grade');
+        Route::post('/submissions/{id}/resubmit-request', [AssignmentSubmissionController::class, 'requestResubmission'])->middleware('permission:homework.grade');
+
+        // Learning Resources
+        Route::get('/resources', [LearningResourceController::class, 'index'])->middleware('permission:lms.view');
+        Route::post('/resources', [LearningResourceController::class, 'store'])->middleware('permission:lms.create');
+        Route::put('/resources/{id}', [LearningResourceController::class, 'update'])->middleware('permission:lms.edit');
+        Route::delete('/resources/{id}', [LearningResourceController::class, 'destroy'])->middleware('permission:lms.delete');
+
+        // Online Quizzes
+        Route::get('/quizzes', [QuizController::class, 'index'])->middleware('permission:lms.view');
+        Route::post('/quizzes', [QuizController::class, 'store'])->middleware('permission:lms.create');
+        Route::post('/quizzes/{id}/publish', [QuizController::class, 'publish'])->middleware('permission:lms.manage');
+        Route::post('/quizzes/{id}/attempts', [QuizController::class, 'startAttempt'])->middleware('permission:lms.view');
+        Route::post('/quiz-attempts/{id}/submit', [QuizController::class, 'submitAttempt'])->middleware('permission:lms.view');
+        Route::get('/quizzes/{id}/report', [QuizController::class, 'report'])->middleware('permission:lms.view');
+    });
+
+    // ==========================================
+    // Unified Portals (Student, Parent, Teacher)
+    // ==========================================
+    Route::prefix('portal')->group(function () {
+        // Student Portal
+        Route::prefix('student')->group(function () {
+            Route::get('/dashboard', [StudentPortalController::class, 'dashboard']);
+            Route::get('/timetable', [StudentPortalController::class, 'timetable']);
+            Route::get('/homework', [StudentPortalController::class, 'homework']);
+            Route::get('/resources', [StudentPortalController::class, 'learningResources']);
+            Route::get('/report-cards', [StudentPortalController::class, 'reportCards']);
+        });
+
+        // Parent Portal
+        Route::prefix('parent')->group(function () {
+            Route::get('/children', [ParentPortalController::class, 'children']);
+            Route::get('/children/{studentId}/dashboard', [ParentPortalController::class, 'childDashboard']);
+            Route::get('/children/{studentId}/fees', [ParentPortalController::class, 'childFees']);
+            Route::get('/children/{studentId}/timetable', [ParentPortalController::class, 'childTimetable']);
+            Route::post('/children/{studentId}/leave', [ParentPortalController::class, 'submitChildLeave']);
+            Route::post('/children/{studentId}/communicate', [ParentPortalController::class, 'communicate']);
+        });
+
+        // Teacher Portal
+        Route::prefix('teacher')->group(function () {
+            Route::get('/dashboard', [TeacherPortalController::class, 'dashboard']);
+            Route::get('/classes', [TeacherPortalController::class, 'classes']);
+            Route::get('/timetable', [TeacherPortalController::class, 'timetable']);
+            Route::get('/performance/{classId}/{subjectId}', [TeacherPortalController::class, 'studentPerformance']);
+        });
     });
 });

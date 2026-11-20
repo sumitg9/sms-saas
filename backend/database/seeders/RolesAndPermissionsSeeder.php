@@ -30,6 +30,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'communication' => ['view', 'create', 'edit', 'delete', 'manage'],
             'reports' => ['view', 'export', 'print'],
             'subscriptions' => ['view', 'manage'],
+            'homework' => ['view', 'create', 'edit', 'delete', 'submit', 'grade'],
+            'lms' => ['view', 'create', 'edit', 'delete', 'manage'],
         ];
 
         $permissionModels = [];
@@ -126,6 +128,8 @@ class RolesAndPermissionsSeeder extends Seeder
                     'academics.view',
                     'attendance.view', 'attendance.create', 'attendance.edit',
                     'examinations.view', 'examinations.create', 'examinations.edit',
+                    'homework.view', 'homework.create', 'homework.edit', 'homework.delete', 'homework.grade',
+                    'lms.view', 'lms.create', 'lms.edit', 'lms.delete', 'lms.manage',
                 ],
             ],
             'class_teacher' => [
@@ -136,6 +140,8 @@ class RolesAndPermissionsSeeder extends Seeder
                     'academics.view',
                     'attendance.view', 'attendance.create', 'attendance.edit', 'attendance.manage',
                     'examinations.view', 'examinations.create', 'examinations.edit', 'examinations.print',
+                    'homework.view', 'homework.create', 'homework.edit', 'homework.delete', 'homework.grade',
+                    'lms.view', 'lms.create', 'lms.edit', 'lms.delete', 'lms.manage',
                     'reports.view', 'reports.print',
                 ],
             ],
@@ -181,6 +187,8 @@ class RolesAndPermissionsSeeder extends Seeder
                     'attendance.view',
                     'fees.view',
                     'examinations.view',
+                    'homework.view',
+                    'lms.view',
                 ],
             ],
             'student' => [
@@ -191,6 +199,9 @@ class RolesAndPermissionsSeeder extends Seeder
                     'attendance.view',
                     'academics.view',
                     'examinations.view',
+                    'homework.view',
+                    'homework.submit',
+                    'lms.view',
                 ],
             ],
             'driver' => [

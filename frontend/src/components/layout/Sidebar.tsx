@@ -20,6 +20,8 @@ import {
   ShieldAlert,
   ChevronRight,
   School,
+  BookOpen,
+  UserCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -68,6 +70,30 @@ const navItems: NavItem[] = [
     href: "/examinations",
     icon: BookOpenCheck,
     permissions: ["examinations.view", "examinations.manage"],
+  },
+  {
+    title: "Learning & LMS",
+    href: "/lms",
+    icon: BookOpen,
+    permissions: ["homework.view", "lms.view"],
+  },
+  {
+    title: "Student Portal",
+    href: "/portal/student",
+    icon: GraduationCap,
+    roles: ["student", "school_admin", "super_admin"],
+  },
+  {
+    title: "Parent Portal",
+    href: "/portal/parent",
+    icon: Users,
+    roles: ["parent", "school_admin", "super_admin"],
+  },
+  {
+    title: "Teacher Portal",
+    href: "/portal/teacher",
+    icon: UserCheck,
+    roles: ["teacher", "class_teacher", "school_admin", "super_admin"],
   },
   {
     title: "Staff & HR",

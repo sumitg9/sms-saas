@@ -90,6 +90,11 @@ class Student extends Model
             ->orderByDesc('created_at');
     }
 
+    public function activeEnrollment(): HasOne
+    {
+        return $this->currentEnrollment();
+    }
+
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'student_guardians', 'student_id', 'guardian_id')
