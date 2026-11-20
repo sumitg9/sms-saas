@@ -38,6 +38,26 @@ use App\Http\Controllers\Api\Lms\QuizController;
 use App\Http\Controllers\Api\Portal\StudentPortalController;
 use App\Http\Controllers\Api\Portal\ParentPortalController;
 use App\Http\Controllers\Api\Portal\TeacherPortalController;
+use App\Http\Controllers\Api\Communication\NotificationController;
+use App\Http\Controllers\Api\Communication\NotificationTemplateController;
+use App\Http\Controllers\Api\Communication\AnnouncementController;
+use App\Http\Controllers\Api\Communication\PtmMeetingController;
+use App\Http\Controllers\Api\Communication\MessageController;
+use App\Http\Controllers\Api\Communication\CommunicationPreferenceController;
+use App\Http\Controllers\Api\Operations\LibraryController;
+use App\Http\Controllers\Api\Operations\TransportController;
+use App\Http\Controllers\Api\Operations\InventoryController;
+use App\Http\Controllers\Api\Operations\HostelController;
+use App\Http\Controllers\Api\Operations\VisitorController;
+use App\Http\Controllers\Api\Analytics\DashboardController;
+use App\Http\Controllers\Api\Reporting\ReportingController;
+use App\Http\Controllers\Api\Certificate\CertificateController;
+use App\Http\Controllers\Api\Academic\StudentAttendanceController;
+use App\Http\Controllers\Api\Subscription\SubscriptionController;
+use App\Http\Controllers\Api\Setting\SchoolSettingController;
+use App\Http\Controllers\Api\Setting\CustomDomainController;
+use App\Http\Controllers\Api\Common\FileUploadController;
+use App\Http\Controllers\Api\Platform\PlatformAdminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -64,9 +84,18 @@ Route::prefix('auth')->group(function () {
 // Payment Webhook (Public, signature-verified & idempotent)
 Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
 
+// Public Certificate Verification (QR Code verification, no auth required)
+Route::get('/certificates/verify/{verificationCode}', [CertificateController::class, 'verifyPublic']);
+
+// Public Subscription Plans Catalog
+Route::get('/subscriptions/plans', [SubscriptionController::class, 'plans']);
+
 // Authenticated User Routes (Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
+
+    // Platform Super Admin Analytics (Cross-tenant SaaS metrics)
+    Route::get('/analytics/platform', [DashboardController::class, 'platformAnalytics']);
 
     // Auth Management
     Route::prefix('auth')->group(function () {
@@ -496,5 +525,229 @@ Route::middleware(['auth:sanctum', 'tenant.require', 'tenant.membership', 'branc
             Route::get('/timetable', [TeacherPortalController::class, 'timetable']);
             Route::get('/performance/{classId}/{subjectId}', [TeacherPortalController::class, 'studentPerformance']);
         });
+    });
+
+    // ==========================================
+    // Centralized Communication & Notification System
+    // ==========================================
+    Route::prefix('communication')->group(function () {
+        // Notifications
+        Route::post('/notifications/send', [NotificationController::class, 'send'])->middleware('permission:communication.create');
+        Route::post('/notifications/bulk', [NotificationController::class, 'sendBulk'])->middleware('permission:communication.create');
+        Route::get('/notifications/logs', [NotificationController::class, 'logs'])->middleware('permission:communication.view');
+        Route::post('/notifications/logs/{id}/retry', [NotificationController::class, 'retry'])->middleware('permission:communication.manage');
+        Route::get('/notifications/user', [NotificationController::class, 'userNotifications']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markNotificationRead']);
+
+        // Notification Templates
+        Route::apiResource('templates', NotificationTemplateController::class);
+
+        // Announcements
+        Route::get('/announcements', [AnnouncementController::class, 'index'])->middleware('permission:communication.view');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('permission:communication.create');
+        Route::get('/announcements/{id}', [AnnouncementController::class, 'show'])->middleware('permission:communication.view');
+        Route::put('/announcements/{id}', [AnnouncementController::class, 'update'])->middleware('permission:communication.edit');
+        Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy'])->middleware('permission:communication.delete');
+        Route::post('/announcements/{id}/acknowledge', [AnnouncementController::class, 'acknowledge']);
+
+        // Parent-Teacher Meetings (PTMs)
+        Route::get('/meetings', [PtmMeetingController::class, 'index'])->middleware('permission:communication.view');
+        Route::post('/meetings/schedule', [PtmMeetingController::class, 'schedule'])->middleware('permission:communication.create');
+        Route::post('/meetings/request', [PtmMeetingController::class, 'requestMeeting']);
+        Route::post('/meetings/{id}/status', [PtmMeetingController::class, 'updateStatus']);
+        Route::post('/meetings/{id}/feedback', [PtmMeetingController::class, 'feedback']);
+
+        // Conversations & Messaging
+        Route::get('/conversations', [MessageController::class, 'conversations']);
+        Route::post('/conversations', [MessageController::class, 'startConversation']);
+        Route::get('/conversations/{id}/messages', [MessageController::class, 'getMessages']);
+        Route::post('/conversations/{id}/messages', [MessageController::class, 'sendMessage']);
+
+        // User Communication Preferences
+        Route::get('/preferences', [CommunicationPreferenceController::class, 'getPreferences']);
+        Route::put('/preferences', [CommunicationPreferenceController::class, 'updatePreferences']);
+    });
+
+    // ==========================================
+    // Extended School Operations: Library Management
+    // ==========================================
+    Route::prefix('operations/library')->group(function () {
+        Route::get('/books', [LibraryController::class, 'index']);
+        Route::post('/books', [LibraryController::class, 'store']);
+        Route::get('/books/{id}', [LibraryController::class, 'show']);
+        Route::put('/books/{id}', [LibraryController::class, 'update']);
+        Route::post('/books/{id}/copies', [LibraryController::class, 'addCopies']);
+        Route::post('/issue', [LibraryController::class, 'issue']);
+        Route::post('/return/{issueId}', [LibraryController::class, 'returnBook']);
+        Route::post('/copies/{copyId}/lost-damaged', [LibraryController::class, 'reportLostOrDamaged']);
+        Route::get('/barcode/{barcode}', [LibraryController::class, 'barcodeLookup']);
+        Route::get('/member/{memberType}/{memberId}', [LibraryController::class, 'memberAccount']);
+        Route::post('/reserve', [LibraryController::class, 'reserve']);
+        Route::get('/reports', [LibraryController::class, 'reports']);
+    });
+
+    // ==========================================
+    // Extended School Operations: Transport Management
+    // ==========================================
+    Route::prefix('operations/transport')->group(function () {
+        Route::get('/vehicles', [TransportController::class, 'vehicles']);
+        Route::post('/vehicles', [TransportController::class, 'storeVehicle']);
+        Route::get('/vehicles/{id}', [TransportController::class, 'showVehicle']);
+        Route::put('/vehicles/{id}', [TransportController::class, 'updateVehicle']);
+        Route::post('/drivers', [TransportController::class, 'storeDriver']);
+        Route::get('/drivers', [TransportController::class, 'drivers']);
+        Route::get('/routes', [TransportController::class, 'routes']);
+        Route::post('/routes', [TransportController::class, 'storeRoute']);
+        Route::post('/routes/{routeId}/stops', [TransportController::class, 'addStop']);
+        Route::post('/allocate', [TransportController::class, 'allocate']);
+        Route::post('/vehicles/{id}/maintenance', [TransportController::class, 'logMaintenance']);
+        Route::post('/vehicles/{id}/fuel', [TransportController::class, 'logFuel']);
+        Route::post('/routes/{routeId}/attendance', [TransportController::class, 'attendance']);
+        Route::post('/vehicles/{id}/telemetry', [TransportController::class, 'telemetry']);
+        Route::get('/reports', [TransportController::class, 'reports']);
+    });
+
+    // ==========================================
+    // Extended School Operations: Inventory Management
+    // ==========================================
+    Route::prefix('operations/inventory')->group(function () {
+        Route::get('/categories', [InventoryController::class, 'categories']);
+        Route::post('/categories', [InventoryController::class, 'storeCategory']);
+        Route::get('/items', [InventoryController::class, 'items']);
+        Route::post('/items', [InventoryController::class, 'storeItem']);
+        Route::get('/items/{id}', [InventoryController::class, 'showItem']);
+        Route::get('/vendors', [InventoryController::class, 'vendors']);
+        Route::post('/vendors', [InventoryController::class, 'storeVendor']);
+        Route::post('/purchases', [InventoryController::class, 'storePurchase']);
+        Route::post('/issue', [InventoryController::class, 'issueStock']);
+        Route::post('/return/{issueId}', [InventoryController::class, 'returnStock']);
+        Route::post('/items/{id}/damaged', [InventoryController::class, 'reportDamaged']);
+        Route::get('/low-stock', [InventoryController::class, 'lowStock']);
+        Route::get('/reports', [InventoryController::class, 'reports']);
+    });
+
+    // ==========================================
+    // Extended School Operations: Hostel Management
+    // ==========================================
+    Route::prefix('operations/hostel')->group(function () {
+        Route::get('/buildings', [HostelController::class, 'buildings']);
+        Route::post('/buildings', [HostelController::class, 'storeBuilding']);
+        Route::get('/rooms', [HostelController::class, 'rooms']);
+        Route::post('/rooms', [HostelController::class, 'storeRoom']);
+        Route::get('/rooms/{id}', [HostelController::class, 'showRoom']);
+        Route::post('/allocate', [HostelController::class, 'allocate']);
+        Route::post('/vacate/{allocationId}', [HostelController::class, 'vacate']);
+        Route::post('/buildings/{buildingId}/attendance', [HostelController::class, 'attendance']);
+        Route::get('/buildings/{buildingId}/mess-menu', [HostelController::class, 'getMessMenu']);
+        Route::post('/buildings/{buildingId}/mess-menu', [HostelController::class, 'setMessMenu']);
+        Route::get('/complaints', [HostelController::class, 'complaints']);
+        Route::post('/complaints', [HostelController::class, 'fileComplaint']);
+        Route::post('/complaints/{id}/resolve', [HostelController::class, 'resolveComplaint']);
+        Route::get('/reports', [HostelController::class, 'reports']);
+    });
+
+    // ==========================================
+    // Extended School Operations: Visitor Management
+    // ==========================================
+    Route::prefix('operations/visitors')->group(function () {
+        Route::get('/', [VisitorController::class, 'index']);
+        Route::post('/', [VisitorController::class, 'store']);
+        Route::get('/passes', [VisitorController::class, 'passes']);
+        Route::post('/check-in', [VisitorController::class, 'checkIn']);
+        Route::post('/passes/{id}/check-out', [VisitorController::class, 'checkOut']);
+        Route::get('/{id}/history', [VisitorController::class, 'history']);
+        Route::post('/gate-passes', [VisitorController::class, 'storeGatePass']);
+        Route::post('/gate-passes/{id}/exit', [VisitorController::class, 'exitGatePass']);
+        Route::get('/reports', [VisitorController::class, 'reports']);
+    });
+
+    // ==========================================
+    // Analytics & Role Dashboards
+    // ==========================================
+    Route::prefix('analytics')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'userDashboard']);
+        Route::get('/school', [DashboardController::class, 'schoolAnalytics']);
+        Route::get('/financial', [DashboardController::class, 'financialAnalytics']);
+    });
+
+    // ==========================================
+    // Advanced Reporting Engine
+    // ==========================================
+    Route::prefix('reports')->group(function () {
+        Route::get('/export-jobs/{id}', [ReportingController::class, 'showJob']);
+        Route::get('/{reportType}', [ReportingController::class, 'report']);
+        Route::get('/{reportType}/export/csv', [ReportingController::class, 'exportCsv']);
+        Route::get('/{reportType}/export/print', [ReportingController::class, 'exportPrint']);
+        Route::post('/{reportType}/export/async', [ReportingController::class, 'queueAsyncExport']);
+    });
+
+    // ==========================================
+    // Certificate Management
+    // ==========================================
+    Route::prefix('certificates')->group(function () {
+        Route::get('/templates', [CertificateController::class, 'indexTemplates']);
+        Route::post('/templates', [CertificateController::class, 'storeTemplate']);
+        Route::get('/', [CertificateController::class, 'index']);
+        Route::post('/issue', [CertificateController::class, 'issue']);
+        Route::get('/{id}', [CertificateController::class, 'show']);
+        Route::get('/{id}/print', [CertificateController::class, 'print']);
+        Route::post('/{id}/revoke', [CertificateController::class, 'revoke']);
+    });
+
+    // ==========================================
+    // Student Attendance Management
+    // ==========================================
+    Route::prefix('attendance')->group(function () {
+        Route::get('/', [StudentAttendanceController::class, 'index']);
+        Route::get('/roster', [StudentAttendanceController::class, 'roster']);
+        Route::post('/mark', [StudentAttendanceController::class, 'markBatch']);
+        Route::get('/student/{id}', [StudentAttendanceController::class, 'studentSummary']);
+    });
+
+    // ==========================================
+    // Subscription & Plan Management
+    // ==========================================
+    Route::prefix('subscriptions')->group(function () {
+        Route::get('/current', [SubscriptionController::class, 'current']);
+        Route::post('/subscribe', [SubscriptionController::class, 'subscribe']);
+        Route::post('/cancel', [SubscriptionController::class, 'cancel']);
+        Route::get('/invoices', [SubscriptionController::class, 'invoices']);
+    });
+
+    // ==========================================
+    // School & Branch Settings
+    // ==========================================
+    Route::prefix('settings')->group(function () {
+        Route::get('/school', [SchoolSettingController::class, 'getSchool']);
+        Route::put('/school', [SchoolSettingController::class, 'updateSchool']);
+        Route::get('/branches', [SchoolSettingController::class, 'getBranches']);
+        Route::post('/branches', [SchoolSettingController::class, 'storeBranch']);
+        Route::put('/branches/{id}', [SchoolSettingController::class, 'updateBranch']);
+        Route::get('/operational', [SchoolSettingController::class, 'getSettings']);
+        Route::post('/operational', [SchoolSettingController::class, 'updateSettings']);
+
+        // Custom Domains Management
+        Route::get('/domains', [CustomDomainController::class, 'index']);
+        Route::post('/domains', [CustomDomainController::class, 'store']);
+        Route::post('/domains/{id}/verify', [CustomDomainController::class, 'verify']);
+        Route::put('/domains/{id}/primary', [CustomDomainController::class, 'setPrimary']);
+        Route::delete('/domains/{id}', [CustomDomainController::class, 'destroy']);
+    });
+
+    // ==========================================
+    // Centralized Secure File Uploads
+    // ==========================================
+    Route::prefix('uploads')->group(function () {
+        Route::post('/', [FileUploadController::class, 'store']);
+        Route::get('/{id}', [FileUploadController::class, 'show']);
+    });
+
+    // ==========================================
+    // Platform Super Admin Control Plane
+    // ==========================================
+    Route::prefix('platform')->group(function () {
+        Route::get('/tenants', [PlatformAdminController::class, 'tenants']);
+        Route::put('/tenants/{id}/status', [PlatformAdminController::class, 'updateStatus']);
+        Route::post('/tenants/{id}/extend-trial', [PlatformAdminController::class, 'extendTrial']);
     });
 });

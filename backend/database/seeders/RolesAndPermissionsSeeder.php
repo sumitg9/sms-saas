@@ -87,6 +87,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'fees.view', 'fees.approve',
                     'examinations.view', 'examinations.publish', 'examinations.export', 'examinations.print',
                     'staff.view', 'staff.manage',
+                    'communication.view', 'communication.create', 'communication.edit', 'communication.delete', 'communication.manage',
                     'reports.view', 'reports.export', 'reports.print',
                 ],
             ],
@@ -130,6 +131,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'examinations.view', 'examinations.create', 'examinations.edit',
                     'homework.view', 'homework.create', 'homework.edit', 'homework.delete', 'homework.grade',
                     'lms.view', 'lms.create', 'lms.edit', 'lms.delete', 'lms.manage',
+                    'communication.view', 'communication.create',
                 ],
             ],
             'class_teacher' => [
@@ -142,6 +144,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'examinations.view', 'examinations.create', 'examinations.edit', 'examinations.print',
                     'homework.view', 'homework.create', 'homework.edit', 'homework.delete', 'homework.grade',
                     'lms.view', 'lms.create', 'lms.edit', 'lms.delete', 'lms.manage',
+                    'communication.view', 'communication.create',
                     'reports.view', 'reports.print',
                 ],
             ],
@@ -189,6 +192,8 @@ class RolesAndPermissionsSeeder extends Seeder
                     'examinations.view',
                     'homework.view',
                     'lms.view',
+                    'communication.view',
+                    'communication.create',
                 ],
             ],
             'student' => [
@@ -202,6 +207,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'homework.view',
                     'homework.submit',
                     'lms.view',
+                    'communication.view',
                 ],
             ],
             'driver' => [

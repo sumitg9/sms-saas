@@ -19,13 +19,18 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:3000'),
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-    ],
+    'allowed_origins' => array_values(array_filter(array_merge(
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')),
+        [
+            env('FRONTEND_URL', 'http://localhost:3000'),
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+        ]
+    ))),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => array_values(array_filter(
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS_PATTERNS', ''))
+    )),
 
     'allowed_headers' => ['*'],
 

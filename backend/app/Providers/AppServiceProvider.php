@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,7 +31,20 @@ class AppServiceProvider extends ServiceProvider
     {
         \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
 
-        \Illuminate\Support\Facades\Gate::before(function (\App\Models\User $user, string $ability) {
+        // Security rate limiters
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(15)->by($request->ip());
+        });
+
+        RateLimiter::for('exports', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        Gate::before(function (\App\Models\User $user, string $ability) {
             if ($user->is_platform_admin) {
                 return true;
             }
@@ -39,8 +56,8 @@ class AppServiceProvider extends ServiceProvider
             return null;
         });
 
-        \Illuminate\Support\Facades\Gate::policy(\App\Models\Student::class, \App\Policies\StudentPolicy::class);
-        \Illuminate\Support\Facades\Gate::policy(\App\Models\FeeInvoice::class, \App\Policies\FeeInvoicePolicy::class);
-        \Illuminate\Support\Facades\Gate::policy(\App\Models\FileUpload::class, \App\Policies\FileUploadPolicy::class);
+        Gate::policy(\App\Models\Student::class, \App\Policies\StudentPolicy::class);
+        Gate::policy(\App\Models\FeeInvoice::class, \App\Policies\FeeInvoicePolicy::class);
+        Gate::policy(\App\Models\FileUpload::class, \App\Policies\FileUploadPolicy::class);
     }
 }

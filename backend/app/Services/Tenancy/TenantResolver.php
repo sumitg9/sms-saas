@@ -126,7 +126,7 @@ class TenantResolver
         $parts = explode('.', $host);
         if (count($parts) >= 3) {
             $subdomain = $parts[0];
-            $reserved = ['www', 'api', 'admin', 'app', 'mail', 'staging', 'dev'];
+            $reserved = ['www', 'api', 'admin', 'app', 'platform', 'mail', 'staging', 'dev'];
 
             if (!in_array($subdomain, $reserved)) {
                 $tenant = Tenant::where('slug', $subdomain)->first();
