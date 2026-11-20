@@ -6,6 +6,7 @@ use App\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StudentMark extends Model
 {
@@ -46,6 +47,21 @@ class StudentMark extends Model
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(StudentEnrollment::class, 'enrollment_id');
+    }
+
+    public function enteredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'entered_by');
+    }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(StudentAssessment::class, 'student_marks_id');
+    }
+
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(ResultCorrection::class, 'student_marks_id');
     }
 }
 

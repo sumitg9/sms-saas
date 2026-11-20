@@ -47,14 +47,34 @@ class Examination extends Model
         return $this->belongsTo(ExaminationType::class, 'exam_type_id');
     }
 
+    public function gradingScheme(): BelongsTo
+    {
+        return $this->belongsTo(GradingScheme::class, 'grading_scheme_id');
+    }
+
     public function schedules(): HasMany
     {
         return $this->hasMany(ExamSchedule::class, 'examination_id');
     }
 
+    public function examSubjects(): HasMany
+    {
+        return $this->hasMany(ExamSubject::class, 'examination_id');
+    }
+
     public function results(): HasMany
     {
         return $this->hasMany(ExamResult::class, 'examination_id');
+    }
+
+    public function publications(): HasMany
+    {
+        return $this->hasMany(ResultPublication::class, 'examination_id');
+    }
+
+    public function reportCards(): HasMany
+    {
+        return $this->hasMany(ReportCard::class, 'examination_id');
     }
 }
 

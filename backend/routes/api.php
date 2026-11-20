@@ -20,6 +20,17 @@ use App\Http\Controllers\Api\Student\AdmissionController;
 use App\Http\Controllers\Api\Student\GuardianController;
 use App\Http\Controllers\Api\Student\StudentController;
 use App\Http\Controllers\Api\Student\StudentImportExportController;
+use App\Http\Controllers\Api\Finance\FeeStructureController;
+use App\Http\Controllers\Api\Finance\StudentFeeController;
+use App\Http\Controllers\Api\Finance\PaymentController;
+use App\Http\Controllers\Api\Finance\RazorpayWebhookController;
+use App\Http\Controllers\Api\Finance\ExpenseController;
+use App\Http\Controllers\Api\Finance\FinancialReportController;
+use App\Http\Controllers\Api\Examination\GradingSchemeController;
+use App\Http\Controllers\Api\Examination\ExaminationController;
+use App\Http\Controllers\Api\Examination\MarksEntryController;
+use App\Http\Controllers\Api\Examination\ResultController;
+use App\Http\Controllers\Api\Examination\ReportCardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +53,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
     Route::post('/2fa/challenge', [TwoFactorController::class, 'challenge']);
 });
+
+// Payment Webhook (Public, signature-verified & idempotent)
+Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
 
 // Authenticated User Routes (Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
@@ -307,5 +321,108 @@ Route::middleware(['auth:sanctum', 'tenant.require', 'tenant.membership', 'branc
         Route::post('/periods/{period}/pay', [PayrollController::class, 'pay'])->middleware('permission:payroll.manage');
         Route::get('/payslips', [PayrollController::class, 'payslips'])->middleware('permission:payroll.view');
         Route::get('/payslips/{payslip}', [PayrollController::class, 'showPayslip'])->middleware('permission:payroll.view');
+    });
+
+    // ==========================================
+    // Fee Management Routes
+    // ==========================================
+    Route::prefix('fees')->group(function () {
+        // Categories & Structures
+        Route::get('/categories', [FeeStructureController::class, 'listCategories'])->middleware('permission:fees.view');
+        Route::post('/categories', [FeeStructureController::class, 'storeCategory'])->middleware('permission:fees.create');
+        Route::get('/structures', [FeeStructureController::class, 'index'])->middleware('permission:fees.view');
+        Route::post('/structures', [FeeStructureController::class, 'store'])->middleware('permission:fees.create');
+        Route::get('/structures/{id}', [FeeStructureController::class, 'show'])->middleware('permission:fees.view');
+        Route::put('/structures/{id}', [FeeStructureController::class, 'update'])->middleware('permission:fees.edit');
+
+        // Concessions
+        Route::get('/concessions', [FeeStructureController::class, 'listConcessions'])->middleware('permission:fees.view');
+        Route::post('/concessions', [FeeStructureController::class, 'storeConcession'])->middleware('permission:fees.create');
+
+        // Assignments & Invoices
+        Route::post('/assignments', [StudentFeeController::class, 'assignFee'])->middleware('permission:fees.create');
+        Route::get('/invoices', [StudentFeeController::class, 'listInvoices'])->middleware('permission:fees.view');
+        Route::get('/invoices/{id}', [StudentFeeController::class, 'showInvoice'])->middleware('permission:fees.view');
+        Route::post('/invoices/{id}/fine', [StudentFeeController::class, 'applyFine'])->middleware('permission:fees.edit');
+        Route::post('/fines/{id}/waive', [StudentFeeController::class, 'waiveFine'])->middleware('permission:fees.edit');
+        Route::get('/ledger/{studentId}', [StudentFeeController::class, 'studentLedger'])->middleware('permission:fees.view');
+
+        // Payments & Razorpay
+        Route::get('/payments', [PaymentController::class, 'index'])->middleware('permission:fees.view');
+        Route::get('/payments/{id}', [PaymentController::class, 'show'])->middleware('permission:fees.view');
+        Route::post('/payments/collect', [PaymentController::class, 'collect'])->middleware('permission:fees.collect');
+        Route::post('/payments/razorpay/order', [PaymentController::class, 'initiateRazorpay'])->middleware('permission:fees.collect');
+        Route::post('/payments/razorpay/verify', [PaymentController::class, 'verifyRazorpay'])->middleware('permission:fees.collect');
+        Route::post('/payments/{id}/refund', [PaymentController::class, 'refund'])->middleware('permission:fees.refund');
+    });
+
+    // ==========================================
+    // Financial & Expense Management Routes
+    // ==========================================
+    Route::prefix('finance')->group(function () {
+        // Accounts & Expenses
+        Route::get('/accounts', [ExpenseController::class, 'listAccounts'])->middleware('permission:fees.view');
+        Route::post('/accounts', [ExpenseController::class, 'storeAccount'])->middleware('permission:fees.create');
+        Route::get('/expense-categories', [ExpenseController::class, 'listCategories'])->middleware('permission:fees.view');
+        Route::post('/expense-categories', [ExpenseController::class, 'storeCategory'])->middleware('permission:fees.create');
+        Route::get('/expenses', [ExpenseController::class, 'index'])->middleware('permission:fees.view');
+        Route::post('/expenses', [ExpenseController::class, 'store'])->middleware('permission:fees.create');
+
+        // Financial Reports
+        Route::prefix('reports')->group(function () {
+            Route::get('/daily', [FinancialReportController::class, 'daily'])->middleware('permission:fees.view');
+            Route::get('/monthly', [FinancialReportController::class, 'monthly'])->middleware('permission:fees.view');
+            Route::get('/class-wise', [FinancialReportController::class, 'classWise'])->middleware('permission:fees.view');
+            Route::get('/outstanding', [FinancialReportController::class, 'outstanding'])->middleware('permission:fees.view');
+            Route::get('/defaulters', [FinancialReportController::class, 'defaulters'])->middleware('permission:fees.view');
+            Route::get('/payment-methods', [FinancialReportController::class, 'paymentMethods'])->middleware('permission:fees.view');
+            Route::get('/refunds', [FinancialReportController::class, 'refunds'])->middleware('permission:fees.view');
+            Route::get('/summary', [FinancialReportController::class, 'summary'])->middleware('permission:fees.view');
+        });
+    });
+
+    // ==========================================
+    // Examination & Result Management Routes
+    // ==========================================
+    Route::prefix('examinations')->group(function () {
+        // Types & Grading Schemes
+        Route::get('/types', [ExaminationController::class, 'listTypes'])->middleware('permission:examinations.view');
+        Route::post('/types', [ExaminationController::class, 'storeType'])->middleware('permission:examinations.create');
+        Route::get('/grading-schemes', [GradingSchemeController::class, 'index'])->middleware('permission:examinations.view');
+        Route::post('/grading-schemes', [GradingSchemeController::class, 'store'])->middleware('permission:examinations.create');
+        Route::get('/grading-schemes/{id}', [GradingSchemeController::class, 'show'])->middleware('permission:examinations.view');
+
+        // Master Examinations
+        Route::get('/', [ExaminationController::class, 'index'])->middleware('permission:examinations.view');
+        Route::post('/', [ExaminationController::class, 'store'])->middleware('permission:examinations.create');
+        Route::get('/{id}', [ExaminationController::class, 'show'])->middleware('permission:examinations.view');
+        Route::put('/{id}', [ExaminationController::class, 'update'])->middleware('permission:examinations.edit');
+
+        // Schedules
+        Route::post('/schedules', [ExaminationController::class, 'schedule'])->middleware('permission:examinations.create');
+        Route::get('/{id}/schedules', [ExaminationController::class, 'listSchedules'])->middleware('permission:examinations.view');
+        Route::get('/schedules/{scheduleId}', [ExaminationController::class, 'getSchedule'])->middleware('permission:examinations.view');
+
+        // Marks Entry & CSV
+        Route::get('/schedules/{scheduleId}/marks', [MarksEntryController::class, 'getScheduleMarks'])->middleware('permission:examinations.view');
+        Route::post('/schedules/{scheduleId}/marks', [MarksEntryController::class, 'enterMarks'])->middleware('permission:examinations.create');
+        Route::get('/schedules/{scheduleId}/template', [MarksEntryController::class, 'downloadCsvTemplate'])->middleware('permission:examinations.view');
+        Route::post('/schedules/{scheduleId}/import', [MarksEntryController::class, 'importCsv'])->middleware('permission:examinations.create');
+        Route::get('/corrections', [MarksEntryController::class, 'listCorrections'])->middleware('permission:examinations.view');
+        Route::post('/marks/{markId}/correction', [MarksEntryController::class, 'requestCorrection'])->middleware('permission:examinations.create');
+        Route::post('/corrections/{correctionId}/review', [MarksEntryController::class, 'reviewCorrection'])->middleware('permission:examinations.publish');
+
+        // Results, Class Ranking & Publication
+        Route::post('/{id}/classes/{classId}/calculate', [ResultController::class, 'calculateClassResults'])->middleware('permission:examinations.create');
+        Route::post('/{id}/publish', [ResultController::class, 'publishResults'])->middleware('permission:examinations.publish');
+        Route::get('/{id}/classes/{classId}/performance', [ResultController::class, 'classPerformance'])->middleware('permission:examinations.view');
+        Route::get('/{id}/classes/{classId}/toppers', [ResultController::class, 'toppers'])->middleware('permission:examinations.view');
+        Route::get('/{id}/classes/{classId}/subject-wise', [ResultController::class, 'subjectWise'])->middleware('permission:examinations.view');
+        Route::get('/students/{studentId}/history', [ResultController::class, 'studentHistory'])->middleware('permission:examinations.view');
+
+        // Report Cards
+        Route::get('/report-cards/templates', [ReportCardController::class, 'listTemplates'])->middleware('permission:examinations.view');
+        Route::post('/report-cards/templates', [ReportCardController::class, 'storeTemplate'])->middleware('permission:examinations.create');
+        Route::get('/{id}/students/{studentId}/report-card', [ReportCardController::class, 'generateStudentReportCard'])->middleware('permission:examinations.view');
     });
 });

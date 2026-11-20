@@ -55,5 +55,10 @@ class ExamSchedule extends Model
     {
         return $this->hasMany(StudentMark::class, 'exam_schedule_id');
     }
+
+    public function components(): HasMany
+    {
+        return $this->hasMany(AssessmentComponent::class, 'exam_schedule_id');
+    }
 }
 
