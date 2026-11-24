@@ -106,10 +106,10 @@ export default function HomePage() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/login">
-                <Button size="sm" className="gap-2 text-xs">
-                  <LogIn className="h-3.5 w-3.5" />
-                  <span>Sign In</span>
+              <Link href="/register">
+                <Button variant="outline" size="sm" className="gap-2 text-xs">
+                  <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                  <span>Register Institution</span>
                 </Button>
               </Link>
             )}

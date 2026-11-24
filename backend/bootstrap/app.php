@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'api/v1/*',
+            'sanctum/csrf-cookie',
+        ]);
         $middleware->alias([
             'tenant.identify' => \App\Http\Middleware\IdentifyTenant::class,
             'tenant.require' => \App\Http\Middleware\RequireTenant::class,

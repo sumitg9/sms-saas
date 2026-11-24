@@ -28,9 +28,12 @@ return [
         ]
     ))),
 
-    'allowed_origins_patterns' => array_values(array_filter(
-        explode(',', (string) env('CORS_ALLOWED_ORIGINS_PATTERNS', ''))
-    )),
+    'allowed_origins_patterns' => array_values(array_filter(array_merge(
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS_PATTERNS', '')),
+        [
+            '#^http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$#',
+        ]
+    ))),
 
     'allowed_headers' => ['*'],
 
